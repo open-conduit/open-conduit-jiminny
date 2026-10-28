@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "settings": {},
+  "connections": [
+    {
+      "id": "jiminny",
+      "type": "jiminny",
+      "config": {},
+      "secret_refs": {
+        "token": "keyring:jiminny-api-token"
+      }
+    }
+  ],
+  "scopes": [
+    {
+      "id": "meeting-notes",
+      "name": "Meeting notes",
+      "authorization": {
+        "connections": ["jiminny"],
+        "operations": ["read_context", "declare_outcome", "human.ask"],
+        "read_scopes": []
+      },
+      "extensions": [
+        {
+          "name": "calls",
+          "type": "jiminny",
+          "connection": "jiminny",
+          "secret_names": [],
+          "config": {
+            "scope": "meeting-notes",
+            "region": "eu",
+            "interval_minutes": 15,
+            "lookback_days": 14,
+            "activity_types": ["Weekly", "Workshop"]
+          }
+        },
+        {
+          "name": "review",
+          "type": "human",
+          "secret_names": [],
+          "config": {"responders": ["operator:local"], "surfaces": ["tui"]}
+        }
+      ],
+      "routes": [
+        {
+          "name": "processed-calls",
+          "handler": "jiminny",
+          "binding": "notes",
+          "active_policy": "queue",
+          "config": {}
+        }
+      ],
+      "bindings": [
+        {
+          "name": "notes",
+          "executor": "claude-code",
+          "requires": {"toolbelt": "mcp", "resume": true},
+          "operations": ["read_context", "declare_outcome", "human.ask"],
+          "secret_names": [],
+          "config": {
+            "playbook": "-",
+            "args": "/meeting-notes {key}",
+            "cold_turns": "resume",
+            "status_schema": "core.turn.v1"
+          }
+        }
+      ],
+      "secret_refs": {}
+    }
+  ]
+}

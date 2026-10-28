@@ -1,0 +1,35 @@
+name: release
+on:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: make test
+      # One package archive per platform, each holding the jiminny/
+      # directory `open-conduit extension install` takes, plus checksums.
+      - run: |
+          set -eu
+          version=${GITHUB_REF_NAME#v}
+          mkdir -p release
+          for target in darwin/arm64 darwin/amd64 linux/arm64 linux/amd64; do
+            os=${target%/*}; arch=${target#*/}
+            rm -rf dist && mkdir -p dist/jiminny
+            GOOS=$os GOARCH=$arch CGO_ENABLED=0 go build -trimpath \
+              -ldflags "-s -w -X github.com/open-conduit/open-conduit-jiminny/jiminny.Version=$version" \
+              -o dist/jiminny/jiminny-extension ./cmd/jiminny-extension
+            go run -ldflags "-X github.com/open-conduit/open-conduit-jiminny/jiminny.Version=$version" ./cmd/jiminny-extension package-manifest > dist/jiminny/open-conduit-extension.json
+            go run ./cmd/jiminny-extension package-certification > dist/jiminny/certification.json
+            tar -C dist -czf "release/jiminny_${version}_${os}_${arch}.tar.gz" jiminny
+          done
+          (cd release && sha256sum *.tar.gz > checksums.txt)
+      - run: gh release create "$GITHUB_REF_NAME" release/* --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}
