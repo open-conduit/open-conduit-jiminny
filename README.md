@@ -51,7 +51,7 @@ The package needs an Open Conduit host whose protocol includes reconcile-first i
 
 - **A route with handler `jiminny`.** It creates one Work, of kind `jiminny.call`, the first time a call is seen.
 - **A `claude-code` binding.** `playbook: "-"` with `args: "/your-skill {key}"` starts each Work on your skill, with the activity ID as its argument and the call's details below. `cold_turns: "resume"` keeps the session across a long review wait. To send different calls to different skills, use one entry, route and binding per filter (for example, `activity_types: ["Workshop"]` to a workshop skill).
-- **A `human` entry, and `human.ask` on the binding.** The skill asks for review with `human.ask`, without `options`, so that free-text corrections are accepted. The Work then waits durably for as long as it takes, and the reviewer answers from the Open Conduit TUI or CLI.
+- **A `human` entry, and `human.ask` on the binding.** The skill asks for review with `human.ask`, without `options`, so that free-text corrections are accepted. The Work then waits durably for as long as it takes, and the reviewer answers from the Open Conduit TUI, CLI or web UI.
 
 ## Try it without Jiminny
 
@@ -64,7 +64,7 @@ The package needs an Open Conduit host whose protocol includes reconcile-first i
 - **Activities Jiminny can't build.** Activities in the response's `failed` list are skipped for that scan and retried on the next one. One that keeps failing is never discovered, and it shows up only in the extension log as a count.
 - **Scan size.** Open Conduit stages at most 10,000 calls and 1,000 pages per scan, which is far more than a 14-day window of meetings normally holds.
 - **Rate limit.** Jiminny allows 30 `/getActivities` requests a minute. One scan of up to 500 calls is a single request.
-- **Approval surface.** Approval happens in the TUI or CLI (`open-conduit actions run … answer`), and nobody is notified that a review is waiting.
+- **Review notifications.** Approval can happen in the TUI, the CLI (`open-conduit actions run … answer`) or the web UI, but nobody is notified that a review is waiting.
 - **No duplicate-publication guard.** The extension does not stop a document being published twice. If an agent crashes after publishing and is retried, it resumes the same Claude session, but your skill should still look for an existing document for the activity ID before creating one.
 
 ## Development
